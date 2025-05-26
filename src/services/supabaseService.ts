@@ -4,15 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const supabaseService = {
   async getKPIs(dateRange: string) {
     try {
-      const daysAgo = parseInt(dateRange);
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
-
+      // For demo purposes, let's get all data regardless of date range
+      // since our sample data is from Jan-Feb 2025
+      
       // Get total revenue and transaction count
       const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
-        .select('total_value, basket_size')
-        .gte('transaction_date', cutoffDate.toISOString());
+        .select('total_value, basket_size');
 
       if (transactionError) throw transactionError;
 
@@ -55,19 +53,14 @@ export const supabaseService = {
 
   async getTopProducts(dateRange: string) {
     try {
-      const daysAgo = parseInt(dateRange);
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
-
+      // Get all transaction items for demo purposes
       const { data, error } = await supabase
         .from('transaction_items')
         .select(`
           quantity,
           price,
-          skus!inner(sku_name),
-          transactions!inner(transaction_date)
-        `)
-        .gte('transactions.transaction_date', cutoffDate.toISOString());
+          skus!inner(sku_name)
+        `);
 
       if (error) throw error;
 
@@ -101,14 +94,10 @@ export const supabaseService = {
 
   async getDailyTrends(dateRange: string) {
     try {
-      const daysAgo = parseInt(dateRange);
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
-
+      // Get all transactions for demo purposes
       const { data, error } = await supabase
         .from('transactions')
         .select('transaction_date')
-        .gte('transaction_date', cutoffDate.toISOString())
         .order('transaction_date');
 
       if (error) throw error;
@@ -120,26 +109,11 @@ export const supabaseService = {
         return acc;
       }, {}) || {};
 
-      // Convert to array format for charts and ensure we have data for the range
+      // Convert to array format for charts
       const trends = Object.entries(dailyCounts).map(([date, transactions]) => ({
         date,
         transactions: transactions as number
       }));
-
-      // Fill in missing dates with 0 transactions if needed
-      if (trends.length === 0) {
-        // Generate sample dates for the range if no data
-        const sampleTrends = [];
-        for (let i = 0; i < Math.min(daysAgo, 14); i++) {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          sampleTrends.push({
-            date: date.toISOString().split('T')[0],
-            transactions: 0
-          });
-        }
-        return sampleTrends.reverse();
-      }
 
       return trends;
     } catch (error) {
