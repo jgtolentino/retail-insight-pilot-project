@@ -26,7 +26,7 @@ export const TransactionChart = ({ dateRange }: TransactionChartProps) => {
     );
   }
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return (
       <Card className="border-0 shadow-xl">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -34,7 +34,10 @@ export const TransactionChart = ({ dateRange }: TransactionChartProps) => {
         </CardHeader>
         <CardContent className="p-6">
           <div className="h-[300px] flex items-center justify-center">
-            <div className="text-red-500">Failed to load chart data</div>
+            <div className="text-center">
+              <div className="text-gray-500 mb-2">No transaction data available</div>
+              <div className="text-sm text-gray-400">Import transaction data to see daily trends</div>
+            </div>
           </div>
         </CardContent>
       </Card>

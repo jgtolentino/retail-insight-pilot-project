@@ -26,7 +26,7 @@ export const TopProductsChart = ({ dateRange }: TopProductsChartProps) => {
     );
   }
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return (
       <Card className="border-0 shadow-xl">
         <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
@@ -34,7 +34,10 @@ export const TopProductsChart = ({ dateRange }: TopProductsChartProps) => {
         </CardHeader>
         <CardContent className="p-6">
           <div className="h-[300px] flex items-center justify-center">
-            <div className="text-red-500">Failed to load chart data</div>
+            <div className="text-center">
+              <div className="text-gray-500 mb-2">No product data available</div>
+              <div className="text-sm text-gray-400">Import transaction data to see top products</div>
+            </div>
           </div>
         </CardContent>
       </Card>

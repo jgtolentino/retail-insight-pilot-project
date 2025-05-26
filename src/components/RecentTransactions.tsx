@@ -21,14 +21,17 @@ export const RecentTransactions = () => {
     );
   }
 
-  if (error || !transactions) {
+  if (error || !transactions || transactions.length === 0) {
     return (
       <Card className="border-0 shadow-xl">
         <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
           <CardTitle className="text-xl font-bold text-gray-800">Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="text-center text-red-500">Failed to load transactions</div>
+          <div className="text-center">
+            <div className="text-gray-500 mb-2">No transactions available</div>
+            <div className="text-sm text-gray-400">Import transaction data to see recent activity</div>
+          </div>
         </CardContent>
       </Card>
     );

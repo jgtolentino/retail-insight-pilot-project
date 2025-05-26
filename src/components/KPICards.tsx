@@ -33,8 +33,11 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="col-span-full">
-          <CardContent className="p-6 text-center text-red-500">
-            Failed to load KPI data. Please try again later.
+          <CardContent className="p-6 text-center">
+            <div className="text-gray-500 mb-2">No data available yet</div>
+            <div className="text-sm text-gray-400">
+              Import your transaction data to see KPI metrics
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -44,8 +47,8 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
   const kpis = [
     {
       title: "Total Revenue",
-      value: formatCurrency(data.totalRevenue),
-      change: "+15.2%",
+      value: formatCurrency(data.totalRevenue || 0),
+      change: data.totalRevenue > 0 ? "+15.2%" : "No data",
       icon: DollarSign,
       color: "bg-gradient-to-r from-green-500 to-emerald-600",
       bgColor: "bg-green-50",
@@ -53,8 +56,8 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Transactions",
-      value: data.transactionCount.toLocaleString('en-PH'),
-      change: "+12.8%",
+      value: (data.transactionCount || 0).toLocaleString('en-PH'),
+      change: data.transactionCount > 0 ? "+12.8%" : "No data",
       icon: ShoppingCart,
       color: "bg-gradient-to-r from-blue-600 to-blue-700",
       bgColor: "bg-blue-50",
@@ -62,8 +65,8 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Avg Basket Size",
-      value: formatCurrencyDetailed(data.avgBasketSize),
-      change: "+8.5%",
+      value: formatCurrencyDetailed(data.avgBasketSize || 0),
+      change: data.avgBasketSize > 0 ? "+8.5%" : "No data",
       icon: TrendingUp,
       color: "bg-gradient-to-r from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
@@ -71,8 +74,8 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Top Product",
-      value: data.topProduct,
-      change: "Best Seller",
+      value: data.topProduct || "No data",
+      change: data.topProduct !== "No data" ? "Best Seller" : "Import data",
       icon: Package,
       color: "bg-gradient-to-r from-orange-500 to-orange-600",
       bgColor: "bg-orange-50",
@@ -80,7 +83,7 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Market Share",
-      value: `${data.marketShare}%`,
+      value: `${data.marketShare || 0}%`,
       change: "+2.1%",
       icon: Target,
       color: "bg-gradient-to-r from-indigo-500 to-indigo-600",
@@ -89,8 +92,8 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Store Presence",
-      value: `${data.storeCount.toLocaleString()} stores`,
-      change: "+125 stores",
+      value: `${(data.storeCount || 0).toLocaleString()} stores`,
+      change: data.storeCount > 0 ? "+125 stores" : "Import data",
       icon: Building2,
       color: "bg-gradient-to-r from-teal-500 to-teal-600",
       bgColor: "bg-teal-50",
