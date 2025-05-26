@@ -1,7 +1,5 @@
 
 import { useState } from "react";
-import { DateFilter } from "@/components/DateFilter";
-import { DashboardHeader } from "@/components/DashboardHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -15,16 +13,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        <DashboardHeader />
-
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Performance Overview</h2>
-            <p className="text-gray-600">Real-time analytics across Philippine retail locations</p>
-          </div>
-          <DateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
-        </div>
-
         <div className="flex justify-center">
           <div className="w-full max-w-md">
             {isLoading ? (
@@ -38,9 +26,15 @@ const Index = () => {
             ) : error || !data ? (
               <Card className="relative overflow-hidden border-0 shadow-xl">
                 <CardContent className="p-6 text-center">
-                  <div className="text-gray-500 mb-2">No data available yet</div>
-                  <div className="text-sm text-gray-400">
-                    Import your transaction data to see metrics
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Total Transactions</p>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">0</p>
+                      <p className="text-sm text-gray-400">No data</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
+                      <ShoppingCart className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
