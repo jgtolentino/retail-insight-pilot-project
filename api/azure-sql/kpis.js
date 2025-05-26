@@ -14,6 +14,21 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // For now, return mock data to ensure the endpoint works
+  // TODO: Implement Azure SQL connection once database access is confirmed
+  const mockResponse = {
+    totalRevenue: 85000000,
+    transactionCount: 12500,
+    avgBasketSize: 285.75,
+    topProduct: "Alaska Evaporated Milk",
+    marketShare: 18.5,
+    storeCount: 2850,
+    dataSource: "mock" // Indicator that this is mock data
+  };
+  
+  res.status(200).json(mockResponse);
+
+  /* Azure SQL implementation (commented out for now):
   try {
     const pool = await getConnection();
     const result = await pool.request().query`
@@ -33,30 +48,20 @@ module.exports = async (req, res) => {
 
     const data = result.recordset[0];
     
-    // Transform to match frontend expectations
     const response = {
       totalRevenue: data.total_revenue || 0,
       transactionCount: data.total_transactions || 0,
       avgBasketSize: data.avg_transaction_value || 0,
-      topProduct: "Alaska Evaporated Milk", // Static for now
-      marketShare: 18.5, // Static for now
-      storeCount: data.unique_locations || 0
+      topProduct: "Alaska Evaporated Milk",
+      marketShare: 18.5,
+      storeCount: data.unique_locations || 0,
+      dataSource: "azure-sql"
     };
 
     res.status(200).json(response);
   } catch (error) {
     console.error('KPI query error:', error);
-    
-    // Fallback to mock data
-    const mockResponse = {
-      totalRevenue: 85000000,
-      transactionCount: 12500,
-      avgBasketSize: 285.75,
-      topProduct: "Alaska Evaporated Milk",
-      marketShare: 18.5,
-      storeCount: 2850
-    };
-    
     res.status(200).json(mockResponse);
   }
+  */
 };
