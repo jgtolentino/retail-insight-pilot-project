@@ -1,14 +1,15 @@
-
 // Azure SQL API service for TBWA retail data
-const AZURE_FUNCTIONS_BASE_URL = import.meta.env.VITE_AZURE_FUNCTIONS_URL || 'https://your-function-app.azurewebsites.net/api';
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:8080/api'
+  : 'https://retail-insight-pilot-project.vercel.app/api';
 
 export interface AzureKPIData {
-  total_revenue: number;
-  transaction_count: number;
-  avg_basket_size: number;
-  top_product: string;
-  market_share: number;
-  store_count: number;
+  totalRevenue: number;
+  transactionCount: number;
+  avgBasketSize: number;
+  topProduct: string;
+  marketShare: number;
+  storeCount: number;
 }
 
 export interface AzureTransactionTrend {
@@ -18,13 +19,13 @@ export interface AzureTransactionTrend {
 }
 
 export interface AzureTopProduct {
-  product_name: string;
-  sales_amount: number;
+  name: string;
+  sales: number;
 }
 
 export interface AzureTransaction {
-  transaction_id: string;
-  store_location: string;
+  id: string;
+  store: string;
   amount: number;
   items: number;
   date: string;
@@ -32,17 +33,15 @@ export interface AzureTransaction {
 }
 
 class AzureSqlService {
-  private async fetchFromAzure<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/${endpoint}`, {
+  private async fetchFromAPI<T>(endpoint: string): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
-        // Add your Azure Function key if required
-        'x-functions-key': import.meta.env.VITE_AZURE_FUNCTION_KEY || ''
       }
     });
 
     if (!response.ok) {
-      throw new Error(`Azure SQL API error: ${response.statusText}`);
+      throw new Error(`API error: ${response.statusText}`);
     }
 
     return response.json();
@@ -50,55 +49,58 @@ class AzureSqlService {
 
   async getKPIs(dateRange: string): Promise<AzureKPIData> {
     try {
-      return await this.fetchFromAzure<AzureKPIData>(`kpis/${dateRange}`);
+      return await this.fetchFromAPI<AzureKPIData>(`azure-sql/kpis`);
     } catch (error) {
       console.error('Failed to fetch KPIs from Azure SQL:', error);
-      // Fallback to mock data if Azure is unavailable
+      // Fallback to mock data if API is unavailable
       const { mockData } = await import('@/data/mockData');
-      const mockKPIs = mockData.getKPIs(dateRange);
+      const mockKPIs = await mockData.getKPIs(dateRange);
       return {
-        total_revenue: mockKPIs.totalRevenue,
-        transaction_count: mockKPIs.transactionCount,
-        avg_basket_size: mockKPIs.avgBasketSize,
-        top_product: mockKPIs.topProduct,
-        market_share: mockKPIs.marketShare,
-        store_count: mockKPIs.storeCount
+        totalRevenue: mockKPIs.totalRevenue,
+        transactionCount: mockKPIs.transactionCount,
+        avgBasketSize: mockKPIs.avgBasketSize,
+        topProduct: mockKPIs.topProduct,
+        marketShare: mockKPIs.marketShare,
+        storeCount: mockKPIs.storeCount
       };
     }
   }
 
   async getDailyTrends(dateRange: string): Promise<AzureTransactionTrend[]> {
     try {
-      return await this.fetchFromAzure<AzureTransactionTrend[]>(`trends/${dateRange}`);
+      return await this.fetchFromAPI<AzureTransactionTrend[]>(`azure-sql/trends?days=${dateRange}`);
     } catch (error) {
       console.error('Failed to fetch trends from Azure SQL:', error);
       const { mockData } = await import('@/data/mockData');
-      return mockData.getDailyTrends(dateRange);
+      return await mockData.getDailyTrends(dateRange);
     }
   }
 
   async getTopProducts(dateRange: string): Promise<AzureTopProduct[]> {
     try {
-      return await this.fetchFromAzure<AzureTopProduct[]>(`products/top/${dateRange}`);
+      return await this.fetchFromAPI<AzureTopProduct[]>(`azure-sql/brands`);
     } catch (error) {
       console.error('Failed to fetch top products from Azure SQL:', error);
       const { mockData } = await import('@/data/mockData');
-      return mockData.getTopProducts(dateRange).map(p => ({
-        product_name: p.name,
-        sales_amount: p.sales
+      const products = await mockData.getTopProducts(dateRange);
+      return products.map(p => ({
+        name: p.name,
+        sales: p.sales
       }));
     }
   }
 
   async getRecentTransactions(): Promise<AzureTransaction[]> {
     try {
-      return await this.fetchFromAzure<AzureTransaction[]>('transactions/recent');
+      const response = await this.fetchFromAPI<{data: AzureTransaction[]}>('azure-sql/transactions');
+      return response.data;
     } catch (error) {
       console.error('Failed to fetch transactions from Azure SQL:', error);
       const { mockData } = await import('@/data/mockData');
-      return mockData.getRecentTransactions().map(t => ({
-        transaction_id: t.id,
-        store_location: t.store,
+      const transactions = await mockData.getRecentTransactions();
+      return transactions.map(t => ({
+        id: t.id,
+        store: t.store,
         amount: t.amount,
         items: t.items,
         date: t.date,

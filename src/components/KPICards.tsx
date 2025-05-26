@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, ShoppingCart, DollarSign, Package, Target, Building2 } from "lucide-react";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useAzureSqlData } from "@/hooks/useAzureSqlData";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatCurrencyDetailed } from "@/lib/currency";
 
@@ -10,7 +10,7 @@ interface KPICardsProps {
 }
 
 export const KPICards = ({ dateRange }: KPICardsProps) => {
-  const { useKPIs } = useDashboardData();
+  const { useKPIs } = useAzureSqlData();
   const { data, isLoading, error } = useKPIs(dateRange);
 
   if (isLoading) {
