@@ -4,13 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 export const supabaseService = {
   async getKPIs(dateRange: string) {
     try {
-      // For demo purposes, let's get all data regardless of date range
-      // since our sample data is from Jan-Feb 2025
+      // Calculate date range based on our sample data (March-May 2025)
+      const daysAgo = parseInt(dateRange);
+      let startDate: string;
+      
+      if (daysAgo <= 30) {
+        // Last 30 days - show May 2025 data
+        startDate = '2025-05-01';
+      } else if (daysAgo <= 60) {
+        // Last 60 days - show April-May 2025 data  
+        startDate = '2025-04-01';
+      } else {
+        // Last 90 days - show all March-May 2025 data
+        startDate = '2025-03-01';
+      }
       
       // Get total revenue and transaction count
       const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
-        .select('total_value, basket_size');
+        .select('total_value, basket_size')
+        .gte('transaction_date', startDate);
 
       if (transactionError) throw transactionError;
 
@@ -23,8 +36,10 @@ export const supabaseService = {
         .from('transaction_items')
         .select(`
           quantity,
-          skus!inner(sku_name)
+          skus!inner(sku_name),
+          transactions!inner(transaction_date)
         `)
+        .gte('transactions.transaction_date', startDate)
         .order('quantity', { ascending: false })
         .limit(1);
 
@@ -53,14 +68,27 @@ export const supabaseService = {
 
   async getTopProducts(dateRange: string) {
     try {
-      // Get all transaction items for demo purposes
+      // Calculate date range
+      const daysAgo = parseInt(dateRange);
+      let startDate: string;
+      
+      if (daysAgo <= 30) {
+        startDate = '2025-05-01';
+      } else if (daysAgo <= 60) {
+        startDate = '2025-04-01';
+      } else {
+        startDate = '2025-03-01';
+      }
+
       const { data, error } = await supabase
         .from('transaction_items')
         .select(`
           quantity,
           price,
-          skus!inner(sku_name)
-        `);
+          skus!inner(sku_name),
+          transactions!inner(transaction_date)
+        `)
+        .gte('transactions.transaction_date', startDate);
 
       if (error) throw error;
 
@@ -94,10 +122,22 @@ export const supabaseService = {
 
   async getDailyTrends(dateRange: string) {
     try {
-      // Get all transactions for demo purposes
+      // Calculate date range
+      const daysAgo = parseInt(dateRange);
+      let startDate: string;
+      
+      if (daysAgo <= 30) {
+        startDate = '2025-05-01';
+      } else if (daysAgo <= 60) {
+        startDate = '2025-04-01';
+      } else {
+        startDate = '2025-03-01';
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .select('transaction_date')
+        .gte('transaction_date', startDate)
         .order('transaction_date');
 
       if (error) throw error;
@@ -133,6 +173,7 @@ export const supabaseService = {
           transaction_date,
           stores!inner(store_name)
         `)
+        .gte('transaction_date', '2025-03-01')
         .order('transaction_date', { ascending: false })
         .limit(10);
 
