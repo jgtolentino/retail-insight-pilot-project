@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const supabaseService = {
   async getKPIs(dateRange: string) {
     try {
+      console.log('getKPIs called with dateRange:', dateRange);
+      
       // Calculate date range based on our sample data (March-May 2025)
       const daysAgo = parseInt(dateRange);
       let startDate: string;
@@ -19,17 +21,23 @@ export const supabaseService = {
         startDate = '2025-03-01';
       }
       
+      console.log('Using startDate:', startDate);
+      
       // Get total revenue and transaction count
       const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
         .select('total_value, basket_size')
         .gte('transaction_date', startDate);
 
+      console.log('Transaction data result:', { transactionData, transactionError });
+
       if (transactionError) throw transactionError;
 
       const totalRevenue = transactionData?.reduce((sum, t) => sum + (parseFloat(t.total_value?.toString() || '0')), 0) || 0;
       const transactionCount = transactionData?.length || 0;
       const avgBasketSize = transactionCount > 0 ? totalRevenue / transactionCount : 0;
+
+      console.log('Calculated KPIs:', { totalRevenue, transactionCount, avgBasketSize });
 
       // Get top product with proper joins
       const { data: topProductData, error: topProductError } = await supabase
@@ -43,6 +51,8 @@ export const supabaseService = {
         .order('quantity', { ascending: false })
         .limit(1);
 
+      console.log('Top product data result:', { topProductData, topProductError });
+
       if (topProductError) throw topProductError;
 
       const topProduct = topProductData?.[0]?.skus?.sku_name || "No data";
@@ -52,7 +62,9 @@ export const supabaseService = {
         .from('stores')
         .select('*', { count: 'exact' });
 
-      return {
+      console.log('Store count:', storeCount);
+
+      const result = {
         totalRevenue,
         transactionCount,
         avgBasketSize,
@@ -60,6 +72,9 @@ export const supabaseService = {
         marketShare: 23.5, // Static for now
         storeCount: storeCount || 0
       };
+
+      console.log('Final KPI result:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching KPIs:', error);
       throw error;
@@ -68,6 +83,8 @@ export const supabaseService = {
 
   async getTopProducts(dateRange: string) {
     try {
+      console.log('getTopProducts called with dateRange:', dateRange);
+      
       // Calculate date range
       const daysAgo = parseInt(dateRange);
       let startDate: string;
@@ -80,6 +97,8 @@ export const supabaseService = {
         startDate = '2025-03-01';
       }
 
+      console.log('Top products using startDate:', startDate);
+
       const { data, error } = await supabase
         .from('transaction_items')
         .select(`
@@ -89,6 +108,8 @@ export const supabaseService = {
           transactions!inner(transaction_date)
         `)
         .gte('transactions.transaction_date', startDate);
+
+      console.log('Top products data result:', { data, error });
 
       if (error) throw error;
 
@@ -104,6 +125,8 @@ export const supabaseService = {
         return acc;
       }, {}) || {};
 
+      console.log('Product sales aggregated:', productSales);
+
       // Convert to array and sort
       const topProducts = Object.entries(productSales)
         .map(([name, sales]) => ({ 
@@ -113,6 +136,7 @@ export const supabaseService = {
         .sort((a, b) => b.sales - a.sales)
         .slice(0, 10);
 
+      console.log('Final top products result:', topProducts);
       return topProducts;
     } catch (error) {
       console.error('Error fetching top products:', error);
@@ -122,6 +146,8 @@ export const supabaseService = {
 
   async getDailyTrends(dateRange: string) {
     try {
+      console.log('getDailyTrends called with dateRange:', dateRange);
+      
       // Calculate date range
       const daysAgo = parseInt(dateRange);
       let startDate: string;
@@ -134,11 +160,15 @@ export const supabaseService = {
         startDate = '2025-03-01';
       }
 
+      console.log('Daily trends using startDate:', startDate);
+
       const { data, error } = await supabase
         .from('transactions')
         .select('transaction_date')
         .gte('transaction_date', startDate)
         .order('transaction_date');
+
+      console.log('Daily trends data result:', { data, error });
 
       if (error) throw error;
 
@@ -149,12 +179,15 @@ export const supabaseService = {
         return acc;
       }, {}) || {};
 
+      console.log('Daily counts aggregated:', dailyCounts);
+
       // Convert to array format for charts
       const trends = Object.entries(dailyCounts).map(([date, transactions]) => ({
         date,
         transactions: transactions as number
       }));
 
+      console.log('Final daily trends result:', trends);
       return trends;
     } catch (error) {
       console.error('Error fetching daily trends:', error);
@@ -164,6 +197,8 @@ export const supabaseService = {
 
   async getRecentTransactions() {
     try {
+      console.log('getRecentTransactions called');
+      
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -177,9 +212,11 @@ export const supabaseService = {
         .order('transaction_date', { ascending: false })
         .limit(10);
 
+      console.log('Recent transactions data result:', { data, error });
+
       if (error) throw error;
 
-      return data?.map(transaction => ({
+      const result = data?.map(transaction => ({
         id: transaction.transaction_id,
         store: transaction.stores?.store_name || 'Unknown Store',
         amount: parseFloat(transaction.total_value?.toString() || '0'),
@@ -187,6 +224,9 @@ export const supabaseService = {
         date: new Date(transaction.transaction_date).toLocaleDateString(),
         status: 'Completed'
       })) || [];
+
+      console.log('Final recent transactions result:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching recent transactions:', error);
       throw error;
