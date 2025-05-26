@@ -14,8 +14,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // For now, return mock data to ensure the endpoint works
-  // TODO: Implement Azure SQL connection once database access is confirmed
+  // Fallback mock data in case Azure SQL fails
   const mockResponse = {
     totalRevenue: 85000000,
     transactionCount: 12500,
@@ -23,14 +22,14 @@ module.exports = async (req, res) => {
     topProduct: "Alaska Evaporated Milk",
     marketShare: 18.5,
     storeCount: 2850,
-    dataSource: "mock" // Indicator that this is mock data
+    dataSource: "fallback-mock"
   };
-  
-  res.status(200).json(mockResponse);
 
-  /* Azure SQL implementation (commented out for now):
   try {
+    console.log('Attempting to connect to Azure SQL...');
     const pool = await getConnection();
+    console.log('Connected to Azure SQL successfully');
+    
     const result = await pool.request().query`
       SELECT 
         COUNT(*) as total_transactions,
@@ -46,22 +45,25 @@ module.exports = async (req, res) => {
       )
     `;
 
+    console.log('Query executed successfully, result:', result.recordset[0]);
     const data = result.recordset[0];
     
     const response = {
       totalRevenue: data.total_revenue || 0,
       transactionCount: data.total_transactions || 0,
       avgBasketSize: data.avg_transaction_value || 0,
-      topProduct: "Alaska Evaporated Milk",
-      marketShare: 18.5,
+      topProduct: "Alaska Evaporated Milk", // Static for now
+      marketShare: 18.5, // Static for now  
       storeCount: data.unique_locations || 0,
-      dataSource: "azure-sql"
+      dataSource: "azure-sql-mock-data"
     };
 
+    console.log('Returning Azure SQL data:', response);
     res.status(200).json(response);
+    
   } catch (error) {
-    console.error('KPI query error:', error);
+    console.error('Azure SQL connection/query error:', error);
+    console.log('Falling back to mock data');
     res.status(200).json(mockResponse);
   }
-  */
 };

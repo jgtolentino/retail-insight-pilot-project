@@ -1,6 +1,6 @@
 const { getConnection } = require('../_lib/azure-sql');
 
-module.exports = async function handler(req, res) {
+module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
