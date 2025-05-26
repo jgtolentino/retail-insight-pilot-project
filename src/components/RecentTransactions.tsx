@@ -1,11 +1,38 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockData } from "@/data/mockData";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { formatCurrencyDetailed } from "@/lib/currency";
 
 export const RecentTransactions = () => {
-  const transactions = mockData.getRecentTransactions();
+  const { useRecentTransactions } = useSupabaseData();
+  const { data: transactions, isLoading, error } = useRecentTransactions();
+
+  if (isLoading) {
+    return (
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
+          <CardTitle className="text-xl font-bold text-gray-800">Recent Transactions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center text-gray-500">Loading transactions...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !transactions) {
+    return (
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
+          <CardTitle className="text-xl font-bold text-gray-800">Recent Transactions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center text-red-500">Failed to load transactions</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-0 shadow-xl">

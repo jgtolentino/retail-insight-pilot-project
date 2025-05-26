@@ -1,6 +1,7 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, ShoppingCart, DollarSign, Package, Target, Building2 } from "lucide-react";
-import { useAzureSqlData } from "@/hooks/useAzureSqlData";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatCurrencyDetailed } from "@/lib/currency";
 
@@ -9,7 +10,7 @@ interface KPICardsProps {
 }
 
 export const KPICards = ({ dateRange }: KPICardsProps) => {
-  const { useKPIs } = useAzureSqlData();
+  const { useKPIs } = useSupabaseData();
   const { data, isLoading, error } = useKPIs(dateRange);
 
   if (isLoading) {

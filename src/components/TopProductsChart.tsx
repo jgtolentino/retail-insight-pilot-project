@@ -1,14 +1,45 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { mockData } from "@/data/mockData";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface TopProductsChartProps {
   dateRange: string;
 }
 
 export const TopProductsChart = ({ dateRange }: TopProductsChartProps) => {
-  const data = mockData.getTopProducts(dateRange);
+  const { useTopProducts } = useSupabaseData();
+  const { data, isLoading, error } = useTopProducts(dateRange);
+
+  if (isLoading) {
+    return (
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+          <CardTitle className="text-xl font-bold text-gray-800">Top 10 Products</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-gray-500">Loading chart...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+          <CardTitle className="text-xl font-bold text-gray-800">Top 10 Products</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-red-500">Failed to load chart data</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-0 shadow-xl">

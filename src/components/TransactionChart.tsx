@@ -1,14 +1,45 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { mockData } from "@/data/mockData";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface TransactionChartProps {
   dateRange: string;
 }
 
 export const TransactionChart = ({ dateRange }: TransactionChartProps) => {
-  const data = mockData.getDailyTrends(dateRange);
+  const { useDailyTrends } = useSupabaseData();
+  const { data, isLoading, error } = useDailyTrends(dateRange);
+
+  if (isLoading) {
+    return (
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="text-xl font-bold text-gray-800">Daily Transaction Trends</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-gray-500">Loading chart...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="text-xl font-bold text-gray-800">Daily Transaction Trends</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-red-500">Failed to load chart data</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-0 shadow-xl">
