@@ -1,104 +1,65 @@
 
 // Azure SQL API endpoints for server-side database access
-import sql from 'mssql';
+// This file provides TypeScript interfaces and API calls to the server endpoints
 
-const config: sql.config = {
-  server: 'sqltbwaprojectscoutserver.database.windows.net',
-  database: 'SQL-TBWA-ProjectScout-Reporting-Prod',
-  user: 'TBWA',
-  password: 'R@nd0mPA$$2025!',
-  options: {
-    encrypt: true,
-    trustServerCertificate: false,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-  requestTimeout: 60000,
-  connectionTimeout: 60000,
-};
+export interface AzureKPIData {
+  total_revenue: number;
+  transaction_count: number;
+  avg_basket_size: number;
+  store_count: number;
+  top_product?: string;
+}
 
-let pool: sql.ConnectionPool | null = null;
+export interface AzureTransaction {
+  id: string;
+  store: string;
+  amount: number;
+  items: number;
+  date: string;
+  status: string;
+}
 
-async function getConnection(): Promise<sql.ConnectionPool> {
-  if (!pool) {
-    pool = await new sql.ConnectionPool(config).connect();
+export interface AzureTrend {
+  date: string;
+  transactions: number;
+  revenue: number;
+}
+
+export interface AzureTopProduct {
+  name: string;
+  sales: number;
+}
+
+const API_BASE_URL = '/api/azure-sql';
+
+export async function getKPIs(days: number = 30): Promise<AzureKPIData> {
+  const response = await fetch(`${API_BASE_URL}/kpis?days=${days}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch KPIs: ${response.statusText}`);
   }
-  return pool;
+  return response.json();
 }
 
-export async function getKPIs(days: number = 30) {
-  const conn = await getConnection();
-  const result = await conn.request()
-    .input('days', sql.Int, days)
-    .query(`
-      SELECT 
-        CAST(SUM(amount) as DECIMAL(18,2)) as total_revenue,
-        COUNT(*) as transaction_count,
-        CAST(AVG(amount) as DECIMAL(18,2)) as avg_basket_size,
-        COUNT(DISTINCT store_location) as store_count,
-        (SELECT TOP 1 brand_name FROM tbwa_transactions_mock 
-         WHERE date >= DATEADD(day, -@days, GETDATE())
-         GROUP BY brand_name ORDER BY SUM(amount) DESC) as top_product
-      FROM tbwa_transactions_mock 
-      WHERE date >= DATEADD(day, -@days, GETDATE())
-    `);
-  
-  return result.recordset[0];
+export async function getTransactions(limit: number = 10): Promise<AzureTransaction[]> {
+  const response = await fetch(`${API_BASE_URL}/transactions?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch transactions: ${response.statusText}`);
+  }
+  return response.json();
 }
 
-export async function getTransactions(limit: number = 10) {
-  const conn = await getConnection();
-  const result = await conn.request()
-    .input('limit', sql.Int, limit)
-    .query(`
-      SELECT TOP (@limit) 
-        transaction_id as id,
-        store_location as store,
-        amount,
-        quantity as items,
-        FORMAT(date, 'yyyy-MM-dd HH:mm:ss') as date,
-        'Completed' as status
-      FROM tbwa_transactions_mock 
-      ORDER BY date DESC
-    `);
-  
-  return result.recordset;
+export async function getTrends(days: number = 30): Promise<AzureTrend[]> {
+  const response = await fetch(`${API_BASE_URL}/trends?days=${days}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch trends: ${response.statusText}`);
+  }
+  return response.json();
 }
 
-export async function getTrends(days: number = 30) {
-  const conn = await getConnection();
-  const result = await conn.request()
-    .input('days', sql.Int, days)
-    .query(`
-      SELECT 
-        FORMAT(CAST(date as DATE), 'yyyy-MM-dd') as date,
-        COUNT(*) as transactions,
-        CAST(SUM(amount) as DECIMAL(18,2)) as revenue
-      FROM tbwa_transactions_mock 
-      WHERE date >= DATEADD(day, -@days, GETDATE())
-      GROUP BY CAST(date as DATE)
-      ORDER BY date
-    `);
-  
-  return result.recordset;
-}
-
-export async function getTopProducts(days: number = 30) {
-  const conn = await getConnection();
-  const result = await conn.request()
-    .input('days', sql.Int, days)
-    .query(`
-      SELECT TOP 10
-        brand_name as name,
-        CAST(SUM(amount) as DECIMAL(18,2)) as sales
-      FROM tbwa_transactions_mock 
-      WHERE date >= DATEADD(day, -@days, GETDATE())
-      GROUP BY brand_name
-      ORDER BY sales DESC
-    `);
-  
-  return result.recordset;
+export async function getTopProducts(days: number = 30): Promise<AzureTopProduct[]> {
+  const response = await fetch(`${API_BASE_URL}/top-products?days=${days}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch top products: ${response.statusText}`);
+  }
+  return response.json();
 }
