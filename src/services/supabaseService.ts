@@ -6,22 +6,24 @@ export const supabaseService = {
     try {
       console.log('getKPIs called with dateRange:', dateRange);
       
-      // First, let's check what data actually exists in the database
-      const { data: allTransactions, error: allError } = await supabase
+      // Get all transactions with their total values
+      const { data: transactions, error: transError } = await supabase
         .from('transactions')
-        .select('transaction_id, total_value, basket_size, transaction_date')
-        .order('transaction_date', { ascending: false })
-        .limit(10);
+        .select('transaction_id, total_value, basket_size, transaction_date, store_id');
 
-      console.log('Sample of all transactions in database:', { 
-        count: allTransactions?.length, 
-        sample: allTransactions?.slice(0, 3),
-        error: allError 
+      console.log('Transactions query result:', { 
+        count: transactions?.length, 
+        sample: transactions?.slice(0, 3),
+        error: transError 
       });
 
-      // If no transactions at all, return empty state
-      if (!allTransactions || allTransactions.length === 0) {
-        console.log('No transactions found in database at all');
+      if (transError) {
+        console.error('Error fetching transactions:', transError);
+        throw transError;
+      }
+
+      if (!transactions || transactions.length === 0) {
+        console.log('No transactions found, returning zero KPIs');
         const { count: storeCount } = await supabase
           .from('stores')
           .select('*', { count: 'exact' });
@@ -36,62 +38,53 @@ export const supabaseService = {
         };
       }
 
-      // For now, let's use all available data instead of date filtering
-      // since we're having issues with the date filter
-      const transactionData = allTransactions;
+      // Calculate KPIs from transactions
+      const totalRevenue = transactions.reduce((sum, t) => {
+        const value = parseFloat(t.total_value?.toString() || '0');
+        return sum + value;
+      }, 0);
       
-      console.log('Using transaction data:', { 
-        count: transactionData?.length, 
-        sample: transactionData?.slice(0, 2)
-      });
-
-      const totalRevenue = transactionData?.reduce((sum, t) => sum + (parseFloat(t.total_value?.toString() || '0')), 0) || 0;
-      const transactionCount = transactionData?.length || 0;
+      const transactionCount = transactions.length;
       const avgBasketSize = transactionCount > 0 ? totalRevenue / transactionCount : 0;
 
-      console.log('Calculated KPIs:', { totalRevenue, transactionCount, avgBasketSize });
+      console.log('Calculated basic KPIs:', { totalRevenue, transactionCount, avgBasketSize });
 
-      // Get transaction IDs for filtering transaction_items
-      const transactionIds = transactionData?.map(t => t.transaction_id) || [];
+      // Get transaction IDs for finding top products
+      const transactionIds = transactions.map(t => t.transaction_id);
       
       let topProduct = "No data";
       if (transactionIds.length > 0) {
-        // Get transaction items for those transactions
-        const { data: transactionItems, error: itemError } = await supabase
+        // Get transaction items to find top product
+        const { data: items, error: itemsError } = await supabase
           .from('transaction_items')
           .select('sku_id, quantity')
           .in('transaction_id', transactionIds);
 
         console.log('Transaction items result:', { 
-          count: transactionItems?.length, 
-          sample: transactionItems?.slice(0, 2),
-          error: itemError 
+          count: items?.length, 
+          error: itemsError 
         });
 
-        if (transactionItems && transactionItems.length > 0) {
-          // Get SKU names
-          const skuIds = [...new Set(transactionItems.map(item => item.sku_id))];
+        if (items && items.length > 0) {
+          // Find most sold SKU
+          const skuCounts = items.reduce((acc: any, item: any) => {
+            acc[item.sku_id] = (acc[item.sku_id] || 0) + (item.quantity || 0);
+            return acc;
+          }, {});
+          
+          const topSkuId = Object.keys(skuCounts).reduce((a, b) => 
+            skuCounts[a] > skuCounts[b] ? a : b
+          );
+
+          // Get SKU name
           const { data: skuData, error: skuError } = await supabase
             .from('skus')
-            .select('sku_id, sku_name')
-            .in('sku_id', skuIds);
+            .select('sku_name')
+            .eq('sku_id', topSkuId)
+            .single();
 
-          console.log('SKU data result:', { 
-            count: skuData?.length, 
-            sample: skuData?.slice(0, 2),
-            error: skuError 
-          });
-
-          if (skuData && skuData.length > 0) {
-            // Find the most sold SKU
-            const skuCounts = transactionItems.reduce((acc: any, item: any) => {
-              acc[item.sku_id] = (acc[item.sku_id] || 0) + (item.quantity || 0);
-              return acc;
-            }, {});
-            
-            const topSkuId = Object.keys(skuCounts).reduce((a, b) => skuCounts[a] > skuCounts[b] ? a : b);
-            const topSku = skuData.find(sku => sku.sku_id === topSkuId);
-            topProduct = topSku?.sku_name || "Unknown Product";
+          if (skuData && !skuError) {
+            topProduct = skuData.sku_name;
           }
         }
       }
@@ -101,156 +94,124 @@ export const supabaseService = {
         .from('stores')
         .select('*', { count: 'exact' });
 
-      console.log('Store count:', storeCount);
-
       const result = {
         totalRevenue,
         transactionCount,
         avgBasketSize,
         topProduct,
-        marketShare: 23.5, // Static for now
+        marketShare: 23.5,
         storeCount: storeCount || 0
       };
 
       console.log('Final KPI result:', result);
       return result;
     } catch (error) {
-      console.error('Error fetching KPIs:', error);
+      console.error('Error in getKPIs:', error);
       throw error;
     }
   },
 
   async getTopProducts(dateRange: string) {
     try {
-      console.log('getTopProducts called with dateRange:', dateRange);
+      console.log('getTopProducts called');
       
-      // Get all transactions first to see what we have
+      // Get all transactions
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('transaction_id');
 
-      console.log('All transactions for top products:', { 
-        count: transactions?.length, 
-        error: transError 
-      });
-
-      if (!transactions || transactions.length === 0) {
-        console.log('No transactions found for top products');
+      if (transError || !transactions || transactions.length === 0) {
+        console.log('No transactions for top products');
         return [];
       }
 
       const transactionIds = transactions.map(t => t.transaction_id);
 
-      // Get transaction items for those transactions
-      const { data: transactionItems, error: itemError } = await supabase
+      // Get transaction items with price and quantity
+      const { data: items, error: itemsError } = await supabase
         .from('transaction_items')
         .select('sku_id, quantity, price')
         .in('transaction_id', transactionIds);
 
-      console.log('Transaction items for top products:', { 
-        count: transactionItems?.length, 
-        error: itemError 
-      });
-
-      if (!transactionItems || transactionItems.length === 0) {
+      if (itemsError || !items || items.length === 0) {
         console.log('No transaction items found');
         return [];
       }
 
-      // Get all relevant SKUs
-      const skuIds = [...new Set(transactionItems.map(item => item.sku_id))];
+      // Calculate total sales per SKU
+      const skuSales = items.reduce((acc: any, item: any) => {
+        const skuId = item.sku_id;
+        const sales = (item.quantity || 0) * (parseFloat(item.price?.toString() || '0'));
+        acc[skuId] = (acc[skuId] || 0) + sales;
+        return acc;
+      }, {});
+
+      // Get SKU names
+      const skuIds = Object.keys(skuSales);
       const { data: skuData, error: skuError } = await supabase
         .from('skus')
         .select('sku_id, sku_name')
         .in('sku_id', skuIds);
 
-      console.log('All SKUs for top products:', { 
-        count: skuData?.length, 
-        error: skuError 
-      });
-
-      if (!skuData || skuData.length === 0) {
+      if (skuError || !skuData) {
         console.log('No SKU data found');
         return [];
       }
 
-      // Group by SKU and calculate total sales
-      const productSales = transactionItems.reduce((acc: any, item: any) => {
-        const skuId = item.sku_id;
-        if (skuId) {
-          if (!acc[skuId]) {
-            acc[skuId] = 0;
-          }
-          acc[skuId] += (item.quantity || 0) * (parseFloat(item.price?.toString() || '0'));
-        }
-        return acc;
-      }, {});
-
-      console.log('Product sales by SKU ID:', productSales);
-
-      // Convert to array with SKU names and sort
-      const topProducts = Object.entries(productSales)
-        .map(([skuId, sales]) => {
+      // Create top products array
+      const topProducts = skuIds
+        .map(skuId => {
           const sku = skuData.find(s => s.sku_id === skuId);
-          const name = sku?.sku_name || `Unknown SKU ${skuId}`;
-          return { 
-            name: name.length > 25 ? name.substring(0, 25) + '...' : name, 
-            sales: sales as number 
+          const name = sku?.sku_name || `SKU ${skuId}`;
+          return {
+            name: name.length > 25 ? name.substring(0, 25) + '...' : name,
+            sales: skuSales[skuId]
           };
         })
         .sort((a, b) => b.sales - a.sales)
         .slice(0, 10);
 
-      console.log('Final top products result:', topProducts);
+      console.log('Top products result:', topProducts);
       return topProducts;
     } catch (error) {
-      console.error('Error fetching top products:', error);
+      console.error('Error in getTopProducts:', error);
       throw error;
     }
   },
 
   async getDailyTrends(dateRange: string) {
     try {
-      console.log('getDailyTrends called with dateRange:', dateRange);
+      console.log('getDailyTrends called');
 
-      // Get all transactions for now to see what we have
-      const { data, error } = await supabase
+      const { data: transactions, error } = await supabase
         .from('transactions')
         .select('transaction_date')
         .order('transaction_date');
 
-      console.log('All daily trends data result:', { 
-        count: data?.length, 
-        sample: data?.slice(0, 3),
-        error 
-      });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        console.log('No transactions found for daily trends');
+      if (error || !transactions || transactions.length === 0) {
+        console.log('No transactions for daily trends');
         return [];
       }
 
       // Group by date
-      const dailyCounts = data.reduce((acc: any, transaction: any) => {
+      const dailyCounts = transactions.reduce((acc: any, transaction: any) => {
         const date = new Date(transaction.transaction_date).toISOString().split('T')[0];
         acc[date] = (acc[date] || 0) + 1;
         return acc;
       }, {});
 
-      console.log('Daily counts aggregated:', dailyCounts);
+      // Convert to chart format
+      const trends = Object.entries(dailyCounts)
+        .map(([date, transactions]) => ({
+          date,
+          transactions: transactions as number
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
 
-      // Convert to array format for charts
-      const trends = Object.entries(dailyCounts).map(([date, transactions]) => ({
-        date,
-        transactions: transactions as number
-      }));
-
-      console.log('Final daily trends result:', trends);
+      console.log('Daily trends result:', trends);
       return trends;
     } catch (error) {
-      console.error('Error fetching daily trends:', error);
+      console.error('Error in getDailyTrends:', error);
       throw error;
     }
   },
@@ -259,37 +220,23 @@ export const supabaseService = {
     try {
       console.log('getRecentTransactions called');
       
-      // Get all recent transactions first to see what we have
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('transaction_id, total_value, basket_size, transaction_date, store_id')
         .order('transaction_date', { ascending: false })
         .limit(10);
 
-      console.log('All recent transactions data result:', { 
-        count: transactions?.length, 
-        sample: transactions?.slice(0, 2),
-        error: transError 
-      });
-
-      if (transError) throw transError;
-
-      if (!transactions || transactions.length === 0) {
+      if (transError || !transactions || transactions.length === 0) {
         console.log('No recent transactions found');
         return [];
       }
 
-      // Get store names separately
+      // Get store names
       const storeIds = [...new Set(transactions.map(t => t.store_id))];
       const { data: stores, error: storeError } = await supabase
         .from('stores')
         .select('store_id, store_name')
         .in('store_id', storeIds);
-
-      console.log('Store data for transactions:', { 
-        count: stores?.length, 
-        error: storeError 
-      });
 
       const result = transactions.map(transaction => {
         const store = stores?.find(s => s.store_id === transaction.store_id);
@@ -303,10 +250,10 @@ export const supabaseService = {
         };
       });
 
-      console.log('Final recent transactions result:', result);
+      console.log('Recent transactions result:', result);
       return result;
     } catch (error) {
-      console.error('Error fetching recent transactions:', error);
+      console.error('Error in getRecentTransactions:', error);
       throw error;
     }
   }
