@@ -1,14 +1,16 @@
 
-// Mock data generator for the retail dashboard POC
+// Mock data generator for the TBWA retail dashboard POC
 export const mockData = {
   getKPIs: (dateRange: string) => {
     const multiplier = dateRange === "7" ? 0.3 : dateRange === "30" ? 1 : 3;
     
     return {
-      totalRevenue: Math.round(1250000 * multiplier),
-      transactionCount: Math.round(3421 * multiplier),
-      avgBasketSize: 365.50,
-      topProduct: "Wireless Bluetooth Headphones"
+      totalRevenue: Math.round(85000000 * multiplier), // PHP 85M base
+      transactionCount: Math.round(12500 * multiplier),
+      avgBasketSize: 285.75, // PHP average
+      topProduct: "Alaska Evaporated Milk",
+      marketShare: 18.5, // New KPI for TBWA
+      storeCount: 2850 // New KPI for store penetration
     };
   },
 
@@ -20,13 +22,13 @@ export const mockData = {
       const date = new Date();
       date.setDate(date.getDate() - i);
       
-      const baseTransactions = 120;
-      const variance = Math.sin(i * 0.1) * 30 + Math.random() * 40;
+      const baseTransactions = 420;
+      const variance = Math.sin(i * 0.1) * 80 + Math.random() * 120;
       
       data.push({
         date: date.toISOString().split('T')[0],
         transactions: Math.round(baseTransactions + variance),
-        revenue: Math.round((baseTransactions + variance) * 365.50)
+        revenue: Math.round((baseTransactions + variance) * 285.75)
       });
     }
     
@@ -34,29 +36,41 @@ export const mockData = {
   },
 
   getTopProducts: (dateRange: string) => {
-    const products = [
-      "Wireless Bluetooth Headphones",
-      "Smartphone Case",
-      "Coffee Maker",
-      "Running Shoes",
-      "Laptop Stand",
-      "Water Bottle",
-      "Desk Lamp",
-      "Phone Charger",
-      "Backpack",
-      "Wireless Mouse"
+    const tbwaProducts = [
+      "Alaska Evaporated Milk",
+      "Oishi Prawn Crackers",
+      "Del Monte Tomato Sauce",
+      "Champion Detergent Bar",
+      "Alaska Condensed Milk",
+      "Pride Dishwashing Liquid",
+      "Del Monte Sweet Style Spaghetti Sauce",
+      "Oishi Potato Chips",
+      "Alaska Fresh Milk",
+      "Champion Liquid Detergent"
     ];
     
     const multiplier = dateRange === "7" ? 0.3 : dateRange === "30" ? 1 : 3;
     
-    return products.map((product, index) => ({
+    return tbwaProducts.map((product, index) => ({
       name: product,
-      sales: Math.round((800 - index * 70) * multiplier)
+      sales: Math.round((2800 - index * 220) * multiplier)
     }));
   },
 
   getRecentTransactions: () => {
-    const stores = ["Store #001", "Store #002", "Store #003", "Store #004", "Store #005"];
+    const philippineStores = [
+      "SM North EDSA", 
+      "Ayala Makati", 
+      "Robinson's Manila", 
+      "SM Cebu", 
+      "Ayala Cebu",
+      "SM Davao",
+      "Robinson's Iloilo",
+      "SM Clark",
+      "Ayala Alabang",
+      "SM Mall of Asia"
+    ];
+    
     const transactions = [];
     
     for (let i = 0; i < 10; i++) {
@@ -64,11 +78,11 @@ export const mockData = {
       date.setHours(date.getHours() - i * 2);
       
       transactions.push({
-        id: `TXN${String(Date.now() + i).slice(-6)}`,
-        store: stores[Math.floor(Math.random() * stores.length)],
-        amount: Math.random() * 500 + 50,
+        id: `TBWA${String(Date.now() + i).slice(-6)}`,
+        store: philippineStores[Math.floor(Math.random() * philippineStores.length)],
+        amount: Math.random() * 1200 + 150, // PHP amounts
         items: Math.floor(Math.random() * 8) + 1,
-        date: date.toLocaleString(),
+        date: date.toLocaleString('en-PH'),
         status: Math.random() > 0.1 ? "Completed" : "Processing"
       });
     }

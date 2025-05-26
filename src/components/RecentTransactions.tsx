@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { mockData } from "@/data/mockData";
+import { formatCurrencyDetailed } from "@/lib/currency";
 
 export const RecentTransactions = () => {
   const transactions = mockData.getRecentTransactions();
@@ -20,10 +21,10 @@ export const RecentTransactions = () => {
                   Transaction ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Store
+                  Store Location
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
+                  Amount (PHP)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Items
@@ -46,7 +47,7 @@ export const RecentTransactions = () => {
                     {transaction.store}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                    ${transaction.amount.toFixed(2)}
+                    {formatCurrencyDetailed(transaction.amount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {transaction.items}
