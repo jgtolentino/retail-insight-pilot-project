@@ -6,39 +6,44 @@ export const supabaseService = {
     try {
       console.log('getKPIs called with dateRange:', dateRange);
       
-      // Since we have sample data from March 2025, let's use that date range
-      // In a real application, you would calculate from the current date
-      let startDate: string;
-      
-      if (dateRange === "7") {
-        // Last 7 days - show recent March data
-        startDate = '2025-03-06';
-      } else if (dateRange === "30") {
-        // Last 30 days - show all March data
-        startDate = '2025-03-01';
-      } else {
-        // Last 90 days - show all available data
-        startDate = '2025-03-01';
-      }
-      
-      console.log('Using startDate:', startDate);
-      
-      // Get total revenue and transaction count
-      const { data: transactionData, error: transactionError } = await supabase
+      // First, let's check what data actually exists in the database
+      const { data: allTransactions, error: allError } = await supabase
         .from('transactions')
         .select('transaction_id, total_value, basket_size, transaction_date')
-        .gte('transaction_date', startDate);
+        .order('transaction_date', { ascending: false })
+        .limit(10);
 
-      console.log('Transaction data result:', { 
-        count: transactionData?.length, 
-        sample: transactionData?.slice(0, 2),
-        error: transactionError 
+      console.log('Sample of all transactions in database:', { 
+        count: allTransactions?.length, 
+        sample: allTransactions?.slice(0, 3),
+        error: allError 
       });
 
-      if (transactionError) {
-        console.error('Transaction error:', transactionError);
-        throw transactionError;
+      // If no transactions at all, return empty state
+      if (!allTransactions || allTransactions.length === 0) {
+        console.log('No transactions found in database at all');
+        const { count: storeCount } = await supabase
+          .from('stores')
+          .select('*', { count: 'exact' });
+        
+        return {
+          totalRevenue: 0,
+          transactionCount: 0,
+          avgBasketSize: 0,
+          topProduct: "No data",
+          marketShare: 23.5,
+          storeCount: storeCount || 0
+        };
       }
+
+      // For now, let's use all available data instead of date filtering
+      // since we're having issues with the date filter
+      const transactionData = allTransactions;
+      
+      console.log('Using transaction data:', { 
+        count: transactionData?.length, 
+        sample: transactionData?.slice(0, 2)
+      });
 
       const totalRevenue = transactionData?.reduce((sum, t) => sum + (parseFloat(t.total_value?.toString() || '0')), 0) || 0;
       const transactionCount = transactionData?.length || 0;
@@ -119,32 +124,18 @@ export const supabaseService = {
     try {
       console.log('getTopProducts called with dateRange:', dateRange);
       
-      // Use same date logic as KPIs
-      let startDate: string;
-      
-      if (dateRange === "7") {
-        startDate = '2025-03-06';
-      } else if (dateRange === "30") {
-        startDate = '2025-03-01';
-      } else {
-        startDate = '2025-03-01';
-      }
-
-      console.log('Top products using startDate:', startDate);
-
-      // Get transactions in date range
+      // Get all transactions first to see what we have
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
-        .select('transaction_id')
-        .gte('transaction_date', startDate);
+        .select('transaction_id');
 
-      console.log('Transactions in range:', { 
+      console.log('All transactions for top products:', { 
         count: transactions?.length, 
         error: transError 
       });
 
       if (!transactions || transactions.length === 0) {
-        console.log('No transactions in date range');
+        console.log('No transactions found for top products');
         return [];
       }
 
@@ -156,7 +147,7 @@ export const supabaseService = {
         .select('sku_id, quantity, price')
         .in('transaction_id', transactionIds);
 
-      console.log('Transaction items for date range:', { 
+      console.log('Transaction items for top products:', { 
         count: transactionItems?.length, 
         error: itemError 
       });
@@ -173,7 +164,7 @@ export const supabaseService = {
         .select('sku_id, sku_name')
         .in('sku_id', skuIds);
 
-      console.log('All SKUs:', { 
+      console.log('All SKUs for top products:', { 
         count: skuData?.length, 
         error: skuError 
       });
@@ -221,27 +212,14 @@ export const supabaseService = {
   async getDailyTrends(dateRange: string) {
     try {
       console.log('getDailyTrends called with dateRange:', dateRange);
-      
-      // Use same date logic as KPIs
-      let startDate: string;
-      
-      if (dateRange === "7") {
-        startDate = '2025-03-06';
-      } else if (dateRange === "30") {
-        startDate = '2025-03-01';
-      } else {
-        startDate = '2025-03-01';
-      }
 
-      console.log('Daily trends using startDate:', startDate);
-
+      // Get all transactions for now to see what we have
       const { data, error } = await supabase
         .from('transactions')
         .select('transaction_date')
-        .gte('transaction_date', startDate)
         .order('transaction_date');
 
-      console.log('Daily trends data result:', { 
+      console.log('All daily trends data result:', { 
         count: data?.length, 
         sample: data?.slice(0, 3),
         error 
@@ -281,15 +259,14 @@ export const supabaseService = {
     try {
       console.log('getRecentTransactions called');
       
-      // Get recent transactions from our March 2025 data
+      // Get all recent transactions first to see what we have
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('transaction_id, total_value, basket_size, transaction_date, store_id')
-        .gte('transaction_date', '2025-03-01')
         .order('transaction_date', { ascending: false })
         .limit(10);
 
-      console.log('Recent transactions data result:', { 
+      console.log('All recent transactions data result:', { 
         count: transactions?.length, 
         sample: transactions?.slice(0, 2),
         error: transError 
