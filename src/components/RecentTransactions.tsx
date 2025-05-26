@@ -1,15 +1,36 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockData } from "@/data/mockData";
+import { azureSqlService } from "@/services/azureSqlService";
+import { formatCurrencyDetailed } from "@/lib/currency";
+import { useState, useEffect } from "react";
 
 export const RecentTransactions = () => {
-  const transactions = mockData.getRecentTransactions();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      try {
+        const transactionsData = await azureSqlService.getRecentTransactions();
+        setTransactions(transactionsData);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   return (
     <Card className="border-0 shadow-xl">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
-        <CardTitle className="text-xl font-bold text-gray-800">Recent Transactions</CardTitle>
+        <CardTitle className="text-xl font-bold text-gray-800">
+          Recent Transactions {loading && "(Loading...)"}
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -20,10 +41,10 @@ export const RecentTransactions = () => {
                   Transaction ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Store
+                  Store Location
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
+                  Amount (PHP)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Items
@@ -40,13 +61,13 @@ export const RecentTransactions = () => {
               {transactions.map((transaction, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {transaction.id}
+                    {transaction.transaction_id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {transaction.store}
+                    {transaction.store_location}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                    ${transaction.amount.toFixed(2)}
+                    {formatCurrencyDetailed(transaction.amount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {transaction.items}

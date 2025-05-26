@@ -5,14 +5,14 @@ export const DashboardHeader = () => {
   return (
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center space-x-3">
-        <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+        <div className="p-3 bg-gradient-to-r from-blue-700 to-blue-800 rounded-xl shadow-lg">
           <BarChart3 className="h-8 w-8 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Retail Analytics Dashboard
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-900 to-blue-700 bg-clip-text text-transparent">
+            TBWA Retail Analytics Dashboard
           </h1>
-          <p className="text-gray-600 text-lg">Real-time insights into your retail performance</p>
+          <p className="text-gray-600 text-lg">Philippine Market Performance Insights</p>
         </div>
       </div>
       
