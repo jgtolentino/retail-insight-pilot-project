@@ -1,29 +1,67 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const supabaseService = {
   async getKPIs(dateRange: string) {
     try {
+      console.log('=== DEBUG: Starting getKPIs ===');
       console.log('getKPIs called with dateRange:', dateRange);
+      
+      // Test basic connection and count first
+      const { count: totalCount, error: countError } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true });
+      
+      console.log('=== TOTAL RECORD COUNT ===');
+      console.log('Total transactions in database:', totalCount);
+      console.log('Count error:', countError);
       
       // Get all transactions with their total values
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('transaction_id, total_value, basket_size, transaction_date, store_id');
 
-      console.log('Transactions query result:', { 
-        count: transactions?.length, 
-        sample: transactions?.slice(0, 3),
-        error: transError 
+      console.log('=== DETAILED TRANSACTION QUERY DEBUG ===');
+      console.log('Raw query result:', { 
+        dataExists: !!transactions,
+        actualCount: transactions?.length, 
+        expectedCount: 3000,
+        firstRecord: transactions?.[0],
+        error: transError,
+        errorDetails: transError ? {
+          code: transError.code,
+          message: transError.message,
+          details: transError.details,
+          hint: transError.hint
+        } : 'No error'
       });
 
       if (transError) {
-        console.error('Error fetching transactions:', transError);
+        console.error('=== TRANSACTION QUERY ERROR ===');
+        console.error('This might be due to:');
+        console.error('1. Row Level Security policies blocking access');
+        console.error('2. Missing permissions');
+        console.error('3. Network/connection issues');
+        console.error('Full error:', transError);
         throw transError;
       }
 
       if (!transactions || transactions.length === 0) {
-        console.log('No transactions found, returning zero KPIs');
+        console.log('=== NO TRANSACTIONS RETRIEVED ===');
+        console.log('Expected 3000 records but got 0');
+        console.log('This suggests RLS policies are blocking access');
+        console.log('or there are permission issues');
+        
+        // Check if we can access other tables
+        const { data: storeTest, error: storeError } = await supabase
+          .from('stores')
+          .select('store_id')
+          .limit(1);
+          
+        console.log('Store table access test:', { 
+          canAccessStores: !!storeTest?.length, 
+          storeError 
+        });
+        
         const { count: storeCount } = await supabase
           .from('stores')
           .select('*', { count: 'exact' });
@@ -32,11 +70,14 @@ export const supabaseService = {
           totalRevenue: 0,
           transactionCount: 0,
           avgBasketSize: 0,
-          topProduct: "No data",
+          topProduct: "No data - Check RLS policies",
           marketShare: 23.5,
           storeCount: storeCount || 0
         };
       }
+
+      console.log('=== SUCCESS: PROCESSING TRANSACTIONS ===');
+      console.log('Successfully retrieved', transactions.length, 'transactions');
 
       // Calculate KPIs from transactions
       const totalRevenue = transactions.reduce((sum, t) => {
@@ -103,10 +144,12 @@ export const supabaseService = {
         storeCount: storeCount || 0
       };
 
-      console.log('Final KPI result:', result);
+      console.log('=== FINAL KPI RESULT ===', result);
       return result;
     } catch (error) {
-      console.error('Error in getKPIs:', error);
+      console.error('=== CRITICAL ERROR in getKPIs ===');
+      console.error('Error type:', typeof error);
+      console.error('Error details:', error);
       throw error;
     }
   },
