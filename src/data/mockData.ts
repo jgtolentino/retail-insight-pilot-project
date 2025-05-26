@@ -58,17 +58,17 @@ export const mockData = {
   },
 
   getRecentTransactions: () => {
-    const philippineStores = [
-      "SM North EDSA", 
-      "Ayala Makati", 
-      "Robinson's Manila", 
-      "SM Cebu", 
-      "Ayala Cebu",
-      "SM Davao",
-      "Robinson's Iloilo",
-      "SM Clark",
-      "Ayala Alabang",
-      "SM Mall of Asia"
+    const philippineCities = [
+      "Manila", 
+      "Quezon City", 
+      "Makati", 
+      "Cebu City", 
+      "Davao City",
+      "Taguig",
+      "Iloilo City",
+      "Pampanga",
+      "Alabang",
+      "Pasay City"
     ];
     
     const transactions = [];
@@ -79,7 +79,7 @@ export const mockData = {
       
       transactions.push({
         id: `TBWA${String(Date.now() + i).slice(-6)}`,
-        store: philippineStores[Math.floor(Math.random() * philippineStores.length)],
+        store: philippineCities[Math.floor(Math.random() * philippineCities.length)],
         amount: Math.random() * 1200 + 150, // PHP amounts
         items: Math.floor(Math.random() * 8) + 1,
         date: date.toLocaleString('en-PH'),
