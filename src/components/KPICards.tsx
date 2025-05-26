@@ -1,20 +1,45 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, ShoppingCart, DollarSign, Package, Target, Building2 } from "lucide-react";
-import { mockData } from "@/data/mockData";
+import { azureSqlService } from "@/services/azureSqlService";
 import { formatCurrency, formatCurrencyDetailed } from "@/lib/currency";
+import { useState, useEffect } from "react";
 
 interface KPICardsProps {
   dateRange: string;
 }
 
 export const KPICards = ({ dateRange }: KPICardsProps) => {
-  const data = mockData.getKPIs(dateRange);
+  const [data, setData] = useState({
+    total_revenue: 0,
+    transaction_count: 0,
+    avg_basket_size: 0,
+    top_product: "Loading...",
+    market_share: 0,
+    store_count: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchKPIs = async () => {
+      setLoading(true);
+      try {
+        const kpiData = await azureSqlService.getKPIs(dateRange);
+        setData(kpiData);
+      } catch (error) {
+        console.error('Error fetching KPIs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchKPIs();
+  }, [dateRange]);
 
   const kpis = [
     {
       title: "Total Revenue",
-      value: formatCurrency(data.totalRevenue),
+      value: loading ? "Loading..." : formatCurrency(data.total_revenue),
       change: "+15.2%",
       icon: DollarSign,
       color: "bg-gradient-to-r from-green-500 to-emerald-600",
@@ -23,7 +48,7 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Transactions",
-      value: data.transactionCount.toLocaleString('en-PH'),
+      value: loading ? "Loading..." : data.transaction_count.toLocaleString('en-PH'),
       change: "+12.8%",
       icon: ShoppingCart,
       color: "bg-gradient-to-r from-blue-600 to-blue-700",
@@ -32,7 +57,7 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Avg Basket Size",
-      value: formatCurrencyDetailed(data.avgBasketSize),
+      value: loading ? "Loading..." : formatCurrencyDetailed(data.avg_basket_size),
       change: "+8.5%",
       icon: TrendingUp,
       color: "bg-gradient-to-r from-purple-500 to-purple-600",
@@ -41,7 +66,7 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Top Product",
-      value: data.topProduct,
+      value: data.top_product,
       change: "Best Seller",
       icon: Package,
       color: "bg-gradient-to-r from-orange-500 to-orange-600",
@@ -50,7 +75,7 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Market Share",
-      value: `${data.marketShare}%`,
+      value: loading ? "Loading..." : `${data.market_share}%`,
       change: "+2.1%",
       icon: Target,
       color: "bg-gradient-to-r from-indigo-500 to-indigo-600",
@@ -59,7 +84,7 @@ export const KPICards = ({ dateRange }: KPICardsProps) => {
     },
     {
       title: "Store Presence",
-      value: `${data.storeCount.toLocaleString()} stores`,
+      value: loading ? "Loading..." : `${data.store_count.toLocaleString()} stores`,
       change: "+125 stores",
       icon: Building2,
       color: "bg-gradient-to-r from-teal-500 to-teal-600",
