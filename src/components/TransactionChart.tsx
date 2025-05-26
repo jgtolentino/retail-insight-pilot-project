@@ -1,39 +1,19 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { azureSqlService } from "@/services/azureSqlService";
-import { useState, useEffect } from "react";
+import { mockData } from "@/data/mockData";
 
 interface TransactionChartProps {
   dateRange: string;
 }
 
 export const TransactionChart = ({ dateRange }: TransactionChartProps) => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTrends = async () => {
-      setLoading(true);
-      try {
-        const trendsData = await azureSqlService.getDailyTrends(dateRange);
-        setData(trendsData);
-      } catch (error) {
-        console.error('Error fetching trends:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrends();
-  }, [dateRange]);
+  const data = mockData.getDailyTrends(dateRange);
 
   return (
     <Card className="border-0 shadow-xl">
       <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-        <CardTitle className="text-xl font-bold text-gray-800">
-          Daily Transaction Trends {loading && "(Loading...)"}
-        </CardTitle>
+        <CardTitle className="text-xl font-bold text-gray-800">Daily Transaction Trends</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <ResponsiveContainer width="100%" height={300}>
