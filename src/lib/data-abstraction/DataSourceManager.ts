@@ -18,7 +18,7 @@ export interface QueryResult {
 
 export interface Connector {
   connect(config: Record<string, any>): Promise<void>;
-  query(sql: string, params?: any[]): Promise<QueryResult>;
+  query(queryName: string, params?: any): Promise<QueryResult>;
   disconnect(): Promise<void>;
   isConnected(): boolean;
 }
@@ -61,43 +61,8 @@ export class DataSourceManager {
       throw new Error(`Connector for type ${dataSource.type} not found`);
     }
 
-    // Map query names to SQL
-    const sqlQueries = this.getQueryMap(queryName, params);
-    return await connector.query(sqlQueries, params);
-  }
-
-  private getQueryMap(queryName: string, params?: any): string {
-    const queries: Record<string, string> = {
-      'kpis': `SELECT 
-        SUM(amount) as total_revenue,
-        COUNT(*) as transaction_count,
-        AVG(amount) as avg_basket_size,
-        COUNT(DISTINCT store_location) as store_count
-        FROM transactions_mock 
-        WHERE date >= DATEADD(day, -${params?.days || 30}, GETDATE())`,
-      
-      'transactions': `SELECT TOP 10 * FROM vw_tbwa_latest_mock_transactions ORDER BY date DESC`,
-      
-      'trends': `SELECT 
-        CAST(date as DATE) as date,
-        COUNT(*) as transaction_count,
-        SUM(amount) as revenue
-        FROM transactions_mock 
-        WHERE date >= DATEADD(day, -${params?.days || 30}, GETDATE())
-        GROUP BY CAST(date as DATE)
-        ORDER BY date`,
-      
-      'top-products': `SELECT 
-        brand_name as name,
-        SUM(amount) as sales,
-        COUNT(*) as transaction_count
-        FROM transactions_mock 
-        WHERE date >= DATEADD(day, -${params?.days || 30}, GETDATE())
-        GROUP BY brand_name
-        ORDER BY sales DESC`
-    };
-
-    return queries[queryName] || 'SELECT 1';
+    // Pass query name directly to connector
+    return await connector.query(queryName, params);
   }
 
   setActiveDataSource(dataSourceId: string): void {

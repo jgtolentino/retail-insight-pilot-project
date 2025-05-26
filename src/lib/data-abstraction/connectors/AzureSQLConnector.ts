@@ -24,9 +24,28 @@ export class AzureSQLConnector implements Connector {
     }
   }
 
-  async query(endpoint: string, params?: any): Promise<QueryResult> {
+  async query(queryName: string, params?: any): Promise<QueryResult> {
     if (!this.connected) {
       throw new Error('Not connected to Azure SQL');
+    }
+
+    // Map query names to API endpoints
+    let endpoint: string;
+    switch (queryName) {
+      case 'kpis':
+        endpoint = 'kpis';
+        break;
+      case 'transactions':
+        endpoint = 'transactions';
+        break;
+      case 'trends':
+        endpoint = 'trends';
+        break;
+      case 'top-products':
+        endpoint = 'top-products';
+        break;
+      default:
+        throw new Error(`Unknown query: ${queryName}`);
     }
 
     let url = `${this.apiBaseUrl}/azure-sql/${endpoint}`;
