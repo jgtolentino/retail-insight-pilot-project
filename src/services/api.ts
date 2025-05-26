@@ -1,5 +1,9 @@
 // API Service for connecting to backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const USE_AZURE_SQL = import.meta.env.VITE_USE_AZURE_SQL === 'true';
+
+// Import Azure SQL service if needed
+import { azureSqlService } from './azureSqlService';
 
 export interface DashboardData {
   kpis: {
@@ -39,6 +43,20 @@ export const apiService = {
   // Transform backend data to match frontend expectations
   getKPIs: async (dateRange: string) => {
     try {
+      // Use Azure SQL if configured
+      if (USE_AZURE_SQL) {
+        const azureData = await azureSqlService.getKPIs(dateRange);
+        return {
+          totalRevenue: azureData.total_revenue,
+          transactionCount: azureData.transaction_count,
+          avgBasketSize: azureData.avg_basket_size,
+          topProduct: azureData.top_product,
+          marketShare: azureData.market_share,
+          storeCount: azureData.store_count
+        };
+      }
+      
+      // Otherwise use Express backend
       const data = await apiService.getDashboardData();
       const multiplier = dateRange === "7" ? 0.3 : dateRange === "30" ? 1 : 3;
       
@@ -46,7 +64,9 @@ export const apiService = {
         totalRevenue: Math.round(data.kpis.totalRevenue * multiplier),
         transactionCount: data.kpis.totalOrders,
         avgBasketSize: data.kpis.totalRevenue / data.kpis.totalOrders,
-        topProduct: data.brandPerformance[0]?.brand || "Alaska Milk"
+        topProduct: data.brandPerformance[0]?.brand || "Alaska Milk",
+        marketShare: data.kpis.growthRate || 18.5, // Using growth rate as market share for now
+        storeCount: data.kpis.activeBrands * 570 || 2850 // Estimate based on brands
       };
     } catch (error) {
       // Fallback to mock data if API fails
@@ -55,7 +75,9 @@ export const apiService = {
         totalRevenue: 2500000,
         transactionCount: 150,
         avgBasketSize: 16666.67,
-        topProduct: "Alaska Milk"
+        topProduct: "Alaska Milk",
+        marketShare: 18.5,
+        storeCount: 2850
       };
     }
   },
