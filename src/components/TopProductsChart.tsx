@@ -1,43 +1,19 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { azureSqlService } from "@/services/azureSqlService";
-import { useState, useEffect } from "react";
+import { mockData } from "@/data/mockData";
 
 interface TopProductsChartProps {
   dateRange: string;
 }
 
 export const TopProductsChart = ({ dateRange }: TopProductsChartProps) => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTopProducts = async () => {
-      setLoading(true);
-      try {
-        const productsData = await azureSqlService.getTopProducts(dateRange);
-        const formattedData = productsData.map(product => ({
-          name: product.product_name,
-          sales: product.sales_amount
-        }));
-        setData(formattedData);
-      } catch (error) {
-        console.error('Error fetching top products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTopProducts();
-  }, [dateRange]);
+  const data = mockData.getTopProducts(dateRange);
 
   return (
     <Card className="border-0 shadow-xl">
       <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-        <CardTitle className="text-xl font-bold text-gray-800">
-          Top 10 Products {loading && "(Loading...)"}
-        </CardTitle>
+        <CardTitle className="text-xl font-bold text-gray-800">Top 10 Products</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <ResponsiveContainer width="100%" height={300}>

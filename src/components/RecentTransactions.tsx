@@ -1,36 +1,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { azureSqlService } from "@/services/azureSqlService";
+import { mockData } from "@/data/mockData";
 import { formatCurrencyDetailed } from "@/lib/currency";
-import { useState, useEffect } from "react";
 
 export const RecentTransactions = () => {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      setLoading(true);
-      try {
-        const transactionsData = await azureSqlService.getRecentTransactions();
-        setTransactions(transactionsData);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, []);
+  const transactions = mockData.getRecentTransactions();
 
   return (
     <Card className="border-0 shadow-xl">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
-        <CardTitle className="text-xl font-bold text-gray-800">
-          Recent Transactions {loading && "(Loading...)"}
-        </CardTitle>
+        <CardTitle className="text-xl font-bold text-gray-800">Recent Transactions</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -61,10 +41,10 @@ export const RecentTransactions = () => {
               {transactions.map((transaction, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {transaction.transaction_id}
+                    {transaction.id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {transaction.store_location}
+                    {transaction.store}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                     {formatCurrencyDetailed(transaction.amount)}

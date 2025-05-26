@@ -1,9 +1,6 @@
 
-// Re-export API service as mockData for compatibility
-export { mockData } from '../services/api';
-
-// Original mock data (kept as backup)
-export const originalMockData = {
+// Mock data generator for the TBWA retail dashboard POC
+export const mockData = {
   getKPIs: (dateRange: string) => {
     const multiplier = dateRange === "7" ? 0.3 : dateRange === "30" ? 1 : 3;
     

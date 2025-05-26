@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, ShoppingCart, DollarSign, Package, Target, Building2 } from "lucide-react";
 import { useAzureSqlData } from "@/hooks/useAzureSqlData";
