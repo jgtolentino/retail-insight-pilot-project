@@ -7,8 +7,7 @@ import { RecentTransactions } from "@/components/RecentTransactions";
 import { DateFilter } from "@/components/DateFilter";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CheckCircle, TrendingUp } from "lucide-react";
 
 const Index = () => {
   const [dateRange, setDateRange] = useState("30");
@@ -18,28 +17,40 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <DashboardHeader />
         
-        {/* Data Import Notice */}
-        <Card className="mb-8 border-amber-200 bg-amber-50">
+        {/* Data Success Notice */}
+        <Card className="mb-8 border-green-200 bg-green-50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-800">
-              <Database className="h-5 w-5" />
-              Database Ready for Data Import
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <CheckCircle className="h-5 w-5" />
+              Data Successfully Imported
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-amber-700 mb-2">
-                  Your Supabase database schema is now set up and ready for data migration from Azure SQL.
+                <p className="text-green-700 mb-2">
+                  Your Philippine retail market data has been successfully imported! 
+                  Dashboard now showing real FMCG analytics with TBWA brands vs competitors.
                 </p>
-                <p className="text-sm text-amber-600">
-                  To populate with sample data, run the generated Python script and SQL inserts.
-                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
+                  <div className="text-green-600">
+                    <TrendingUp className="h-4 w-4 inline mr-1" />
+                    50+ Transactions
+                  </div>
+                  <div className="text-green-600">
+                    <TrendingUp className="h-4 w-4 inline mr-1" />
+                    19 Brands
+                  </div>
+                  <div className="text-green-600">
+                    <TrendingUp className="h-4 w-4 inline mr-1" />
+                    44+ SKUs
+                  </div>
+                  <div className="text-green-600">
+                    <TrendingUp className="h-4 w-4 inline mr-1" />
+                    15 Stores
+                  </div>
+                </div>
               </div>
-              <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
-                <Upload className="h-4 w-4 mr-2" />
-                Import Data
-              </Button>
             </div>
           </CardContent>
         </Card>

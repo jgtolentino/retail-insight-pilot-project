@@ -20,11 +20,10 @@ export const supabaseService = {
       const transactionCount = transactionData?.length || 0;
       const avgBasketSize = transactionCount > 0 ? totalRevenue / transactionCount : 0;
 
-      // Get top product
+      // Get top product with proper joins
       const { data: topProductData, error: topProductError } = await supabase
         .from('transaction_items')
         .select(`
-          sku_id,
           quantity,
           skus!inner(sku_name)
         `)
@@ -86,7 +85,10 @@ export const supabaseService = {
 
       // Convert to array and sort
       const topProducts = Object.entries(productSales)
-        .map(([name, sales]) => ({ name, sales: sales as number }))
+        .map(([name, sales]) => ({ 
+          name: name.length > 25 ? name.substring(0, 25) + '...' : name, 
+          sales: sales as number 
+        }))
         .sort((a, b) => b.sales - a.sales)
         .slice(0, 10);
 
@@ -118,11 +120,28 @@ export const supabaseService = {
         return acc;
       }, {}) || {};
 
-      // Convert to array format for charts
-      return Object.entries(dailyCounts).map(([date, transactions]) => ({
+      // Convert to array format for charts and ensure we have data for the range
+      const trends = Object.entries(dailyCounts).map(([date, transactions]) => ({
         date,
         transactions: transactions as number
       }));
+
+      // Fill in missing dates with 0 transactions if needed
+      if (trends.length === 0) {
+        // Generate sample dates for the range if no data
+        const sampleTrends = [];
+        for (let i = 0; i < Math.min(daysAgo, 14); i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          sampleTrends.push({
+            date: date.toISOString().split('T')[0],
+            transactions: 0
+          });
+        }
+        return sampleTrends.reverse();
+      }
+
+      return trends;
     } catch (error) {
       console.error('Error fetching daily trends:', error);
       throw error;
