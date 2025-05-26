@@ -6,24 +6,24 @@ export const supabaseService = {
     try {
       console.log('getKPIs called with dateRange:', dateRange);
       
-      // Calculate date range based on our sample data (March-May 2025)
-      const daysAgo = parseInt(dateRange);
+      // Since we have sample data from March 2025, let's use that date range
+      // In a real application, you would calculate from the current date
       let startDate: string;
       
-      if (daysAgo <= 30) {
-        // Last 30 days - show May 2025 data
-        startDate = '2025-05-01';
-      } else if (daysAgo <= 60) {
-        // Last 60 days - show April-May 2025 data  
-        startDate = '2025-04-01';
+      if (dateRange === "7") {
+        // Last 7 days - show recent March data
+        startDate = '2025-03-06';
+      } else if (dateRange === "30") {
+        // Last 30 days - show all March data
+        startDate = '2025-03-01';
       } else {
-        // Last 90 days - show all March-May 2025 data
+        // Last 90 days - show all available data
         startDate = '2025-03-01';
       }
       
       console.log('Using startDate:', startDate);
       
-      // Get total revenue and transaction count - simplified query first
+      // Get total revenue and transaction count
       const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
         .select('total_value, basket_size, transaction_date')
@@ -46,39 +46,49 @@ export const supabaseService = {
 
       console.log('Calculated KPIs:', { totalRevenue, transactionCount, avgBasketSize });
 
-      // Get top product - try without joins first
-      const { data: transactionItems, error: itemError } = await supabase
-        .from('transaction_items')
-        .select('sku_id, quantity');
-
-      console.log('Transaction items result:', { 
-        count: transactionItems?.length, 
-        sample: transactionItems?.slice(0, 2),
-        error: itemError 
-      });
-
-      // Get SKU names separately
-      const { data: skuData, error: skuError } = await supabase
-        .from('skus')
-        .select('sku_id, sku_name');
-
-      console.log('SKU data result:', { 
-        count: skuData?.length, 
-        sample: skuData?.slice(0, 2),
-        error: skuError 
-      });
-
+      // Get transaction IDs for filtering transaction_items
+      const transactionIds = transactionData?.map(t => t.transaction_id) || [];
+      
       let topProduct = "No data";
-      if (transactionItems && skuData && transactionItems.length > 0 && skuData.length > 0) {
-        // Find the most sold SKU
-        const skuCounts = transactionItems.reduce((acc: any, item: any) => {
-          acc[item.sku_id] = (acc[item.sku_id] || 0) + (item.quantity || 0);
-          return acc;
-        }, {});
-        
-        const topSkuId = Object.keys(skuCounts).reduce((a, b) => skuCounts[a] > skuCounts[b] ? a : b);
-        const topSku = skuData.find(sku => sku.sku_id === topSkuId);
-        topProduct = topSku?.sku_name || "Unknown Product";
+      if (transactionIds.length > 0) {
+        // Get transaction items for those transactions
+        const { data: transactionItems, error: itemError } = await supabase
+          .from('transaction_items')
+          .select('sku_id, quantity')
+          .in('transaction_id', transactionIds);
+
+        console.log('Transaction items result:', { 
+          count: transactionItems?.length, 
+          sample: transactionItems?.slice(0, 2),
+          error: itemError 
+        });
+
+        if (transactionItems && transactionItems.length > 0) {
+          // Get SKU names
+          const skuIds = [...new Set(transactionItems.map(item => item.sku_id))];
+          const { data: skuData, error: skuError } = await supabase
+            .from('skus')
+            .select('sku_id, sku_name')
+            .in('sku_id', skuIds);
+
+          console.log('SKU data result:', { 
+            count: skuData?.length, 
+            sample: skuData?.slice(0, 2),
+            error: skuError 
+          });
+
+          if (skuData && skuData.length > 0) {
+            // Find the most sold SKU
+            const skuCounts = transactionItems.reduce((acc: any, item: any) => {
+              acc[item.sku_id] = (acc[item.sku_id] || 0) + (item.quantity || 0);
+              return acc;
+            }, {});
+            
+            const topSkuId = Object.keys(skuCounts).reduce((a, b) => skuCounts[a] > skuCounts[b] ? a : b);
+            const topSku = skuData.find(sku => sku.sku_id === topSkuId);
+            topProduct = topSku?.sku_name || "Unknown Product";
+          }
+        }
       }
 
       // Get store count
@@ -109,14 +119,13 @@ export const supabaseService = {
     try {
       console.log('getTopProducts called with dateRange:', dateRange);
       
-      // Calculate date range
-      const daysAgo = parseInt(dateRange);
+      // Use same date logic as KPIs
       let startDate: string;
       
-      if (daysAgo <= 30) {
-        startDate = '2025-05-01';
-      } else if (daysAgo <= 60) {
-        startDate = '2025-04-01';
+      if (dateRange === "7") {
+        startDate = '2025-03-06';
+      } else if (dateRange === "30") {
+        startDate = '2025-03-01';
       } else {
         startDate = '2025-03-01';
       }
@@ -152,18 +161,25 @@ export const supabaseService = {
         error: itemError 
       });
 
-      // Get all SKUs
+      if (!transactionItems || transactionItems.length === 0) {
+        console.log('No transaction items found');
+        return [];
+      }
+
+      // Get all relevant SKUs
+      const skuIds = [...new Set(transactionItems.map(item => item.sku_id))];
       const { data: skuData, error: skuError } = await supabase
         .from('skus')
-        .select('sku_id, sku_name');
+        .select('sku_id, sku_name')
+        .in('sku_id', skuIds);
 
       console.log('All SKUs:', { 
         count: skuData?.length, 
         error: skuError 
       });
 
-      if (!transactionItems || !skuData || transactionItems.length === 0) {
-        console.log('No transaction items or SKU data');
+      if (!skuData || skuData.length === 0) {
+        console.log('No SKU data found');
         return [];
       }
 
@@ -206,14 +222,13 @@ export const supabaseService = {
     try {
       console.log('getDailyTrends called with dateRange:', dateRange);
       
-      // Calculate date range
-      const daysAgo = parseInt(dateRange);
+      // Use same date logic as KPIs
       let startDate: string;
       
-      if (daysAgo <= 30) {
-        startDate = '2025-05-01';
-      } else if (daysAgo <= 60) {
-        startDate = '2025-04-01';
+      if (dateRange === "7") {
+        startDate = '2025-03-06';
+      } else if (dateRange === "30") {
+        startDate = '2025-03-01';
       } else {
         startDate = '2025-03-01';
       }
@@ -266,7 +281,7 @@ export const supabaseService = {
     try {
       console.log('getRecentTransactions called');
       
-      // Get transactions with store info separately
+      // Get recent transactions from our March 2025 data
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('transaction_id, total_value, basket_size, transaction_date, store_id')
