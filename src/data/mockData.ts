@@ -1,6 +1,5 @@
-// Mock data generator for the TBWA retail dashboard POC
-import { formatCurrency, formatCurrencyDetailed } from "@/lib/currency";
 
+// Mock data generator for the TBWA retail dashboard POC
 export const mockData = {
   getKPIs: (dateRange: string) => {
     const multiplier = dateRange === "7" ? 0.3 : dateRange === "30" ? 1 : 3;

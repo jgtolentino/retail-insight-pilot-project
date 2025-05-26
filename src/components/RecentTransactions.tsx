@@ -1,37 +1,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { mockData } from "@/data/mockData";
 import { formatCurrencyDetailed } from "@/lib/currency";
-import { useDataSource } from "@/hooks/useDataSource";
-import { useEffect, useState } from "react";
 
 export const RecentTransactions = () => {
-  const { getTransactions, isLoading, error } = useDataSource();
-  const [transactions, setTransactions] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const transactionData = await getTransactions();
-      setTransactions(transactionData);
-    };
-    fetchData();
-  }, [getTransactions]);
-
-  if (isLoading) {
-    return (
-      <Card className="border-0 shadow-xl">
-        <CardContent className="p-6 text-center">
-          Loading recent transactions...
-        </CardContent>
-      </Card>
-    );
-  }
+  const transactions = mockData.getRecentTransactions();
 
   return (
     <Card className="border-0 shadow-xl">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
         <CardTitle className="text-xl font-bold text-gray-800">Recent Transactions</CardTitle>
-        {error && <div className="text-sm text-orange-600">Using fallback data</div>}
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
