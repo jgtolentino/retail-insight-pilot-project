@@ -26,7 +26,7 @@ export const supabaseService = {
       // Get total revenue and transaction count
       const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
-        .select('total_value, basket_size, transaction_date')
+        .select('transaction_id, total_value, basket_size, transaction_date')
         .gte('transaction_date', startDate);
 
       console.log('Transaction data result:', { 
