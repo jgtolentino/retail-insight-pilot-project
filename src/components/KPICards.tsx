@@ -1,14 +1,44 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, ShoppingCart, DollarSign, Package } from "lucide-react";
-import { mockData } from "@/data/mockData";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface KPICardsProps {
   dateRange: string;
 }
 
 export const KPICards = ({ dateRange }: KPICardsProps) => {
-  const data = mockData.getKPIs(dateRange);
+  const { useKPIs } = useDashboardData();
+  const { data, isLoading, error } = useKPIs(dateRange);
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="relative overflow-hidden border-0 shadow-xl">
+            <CardContent className="p-6">
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-8 w-32 mb-1" />
+              <Skeleton className="h-4 w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="col-span-full">
+          <CardContent className="p-6 text-center text-red-500">
+            Failed to load KPI data. Please try again later.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const kpis = [
     {
