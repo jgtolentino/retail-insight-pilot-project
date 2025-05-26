@@ -55,7 +55,15 @@ class AzureSqlService {
       console.error('Failed to fetch KPIs from Azure SQL:', error);
       // Fallback to mock data if Azure is unavailable
       const { mockData } = await import('@/data/mockData');
-      return mockData.getKPIs(dateRange) as AzureKPIData;
+      const mockKPIs = mockData.getKPIs(dateRange);
+      return {
+        total_revenue: mockKPIs.totalRevenue,
+        transaction_count: mockKPIs.transactionCount,
+        avg_basket_size: mockKPIs.avgBasketSize,
+        top_product: mockKPIs.topProduct,
+        market_share: mockKPIs.marketShare,
+        store_count: mockKPIs.storeCount
+      };
     }
   }
 
