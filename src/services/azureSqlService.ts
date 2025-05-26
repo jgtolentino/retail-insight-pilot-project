@@ -1,6 +1,6 @@
 
 // Azure SQL API service for TBWA retail data
-const AZURE_FUNCTIONS_BASE_URL = process.env.REACT_APP_AZURE_FUNCTIONS_URL || 'https://your-function-app.azurewebsites.net/api';
+const AZURE_FUNCTIONS_BASE_URL = import.meta.env.VITE_AZURE_FUNCTIONS_URL || 'https://your-function-app.azurewebsites.net/api';
 
 export interface AzureKPIData {
   total_revenue: number;
@@ -37,7 +37,7 @@ class AzureSqlService {
       headers: {
         'Content-Type': 'application/json',
         // Add your Azure Function key if required
-        'x-functions-key': process.env.REACT_APP_AZURE_FUNCTION_KEY || ''
+        'x-functions-key': import.meta.env.VITE_AZURE_FUNCTION_KEY || ''
       }
     });
 
